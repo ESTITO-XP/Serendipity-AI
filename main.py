@@ -1,10 +1,15 @@
 from fastapi import FastAPI
+import openai
+import os
 
 app = FastAPI(
     title="Serendipity AI",
     description="Your supportive AI companion for delightful discoveries.",
     version="0.1.0"
 )
+
+# Set OpenAI API key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.get("/")
 def root():
@@ -18,4 +23,14 @@ def about():
         "status": "In progress",
         "open_source": True
     }
-  
+
+@app.post("/chat")
+async def chat(message: str):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": message}]
+        )
+        return {"response": response.choices[0].message.content}
+    except Exception as e:
+        return {"error": str(e)}
