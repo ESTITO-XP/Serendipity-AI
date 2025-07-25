@@ -12,8 +12,14 @@ app = FastAPI(
 # Set OpenAI API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# System prompt for AI personality
+SYSTEM_PROMPT = {
+    "role": "system",
+    "content": "You are Serendipity AI, a supportive and delightful AI companion. You're always available to help, provide insightful conversations, and create delightful discoveries. Be friendly, encouraging, and curious. Help users explore new ideas and perspectives."
+}
+
 # Store conversation history (in production, use a database)
-conversation_history = []
+conversation_history = [SYSTEM_PROMPT]
 
 class ChatRequest(BaseModel):
     message: str
@@ -54,5 +60,5 @@ async def chat(request: ChatRequest):
 @app.post("/clear-chat")
 async def clear_chat():
     global conversation_history
-    conversation_history = []
+    conversation_history = [SYSTEM_PROMPT]
     return {"message": "Conversation cleared"}
