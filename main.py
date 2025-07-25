@@ -12,6 +12,9 @@ app = FastAPI(
 # Set OpenAI API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# Store conversation history (in production, use a database)
+conversation_history = []
+
 class ChatRequest(BaseModel):
     message: str
 
@@ -31,10 +34,25 @@ def about():
 @app.post("/chat")
 async def chat(request: ChatRequest):
     try:
+        # Add user message to history
+        conversation_history.append({"role": "user", "content": request.message})
+        
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": request.message}]
+            messages=conversation_history
         )
-        return {"response": response.choices[0].message.content}
+        
+        ai_response = response.choices[0].message.content
+        
+        # Add AI response to history
+        conversation_history.append({"role": "assistant", "content": ai_response})
+        
+        return {"response": ai_response}
     except Exception as e:
         return {"error": str(e)}
+
+@app.post("/clear-chat")
+async def clear_chat():
+    global conversation_history
+    conversation_history = []
+    return {"message": "Conversation cleared"}
