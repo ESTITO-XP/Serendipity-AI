@@ -24,6 +24,7 @@ SYSTEM_PROMPT = {
 
 # Store conversation history (in production, use a database)
 conversation_history = [SYSTEM_PROMPT]
+MAX_HISTORY_LENGTH = 20  # Keep last 10 exchanges (20 messages)
 
 class ChatRequest(BaseModel):
     message: str
@@ -49,6 +50,12 @@ def about():
         "open_source": True
     }
 
+@app.get("/history")
+async def get_history():
+    # Return history without system prompt
+    user_history = [msg for msg in conversation_history if msg["role"] != "system"]
+    return {"history": user_history, "count": len(user_history)}
+
 @app.post("/chat")
 async def chat(request: ChatRequest):
     try:
@@ -58,26 +65,5 @@ async def chat(request: ChatRequest):
         # Add user message to history
         conversation_history.append({"role": "user", "content": request.message})
         
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=conversation_history,
-            max_tokens=1000,
-            temperature=0.7
-        )
-        
-        ai_response = response.choices[0].message.content
-        
-        # Add AI response to history
-        conversation_history.append({"role": "assistant", "content": ai_response})
-        
-        return {"response": ai_response}
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
-
-@app.post("/clear-chat")
-async def clear_chat():
-    global conversation_history
-    conversation_history = [SYSTEM_PROMPT]
-    return {"message": "Conversation cleared"}
+        # Trim history if too long (keep system prompt + recent messages)
+        if len(conversation_history) > MAX_
