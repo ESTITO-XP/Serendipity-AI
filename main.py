@@ -2,6 +2,10 @@ from fastapi import FastAPI
 import openai
 import os
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(
     title="Serendipity AI",
