@@ -1,7 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import openai
 import os
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -27,6 +27,14 @@ conversation_history = [SYSTEM_PROMPT]
 
 class ChatRequest(BaseModel):
     message: str
+    
+    @validator('message')
+    def message_must_not_be_empty(cls, v):
+        if not v.strip():
+            raise ValueError('Message cannot be empty')
+        if len(v) > 4000:
+            raise ValueError('Message too long (max 4000 characters)')
+        return v.strip()
 
 @app.get("/")
 def root():
@@ -44,12 +52,17 @@ def about():
 @app.post("/chat")
 async def chat(request: ChatRequest):
     try:
+        if not openai.api_key:
+            raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+        
         # Add user message to history
         conversation_history.append({"role": "user", "content": request.message})
         
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=conversation_history
+            messages=conversation_history,
+            max_tokens=1000,
+            temperature=0.7
         )
         
         ai_response = response.choices[0].message.content
@@ -58,8 +71,10 @@ async def chat(request: ChatRequest):
         conversation_history.append({"role": "assistant", "content": ai_response})
         
         return {"response": ai_response}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
 
 @app.post("/clear-chat")
 async def clear_chat():
