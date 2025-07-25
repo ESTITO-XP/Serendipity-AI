@@ -41,13 +41,30 @@ class ChatRequest(BaseModel):
 def root():
     return {"message": "Welcome to Serendipity AI!"}
 
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "Serendipity AI",
+        "version": "0.1.0",
+        "api_configured": bool(openai.api_key)
+    }
+
 @app.get("/about")
 def about():
     return {
         "project": "Serendipity AI",
         "description": "Your supportive AI companion for delightful discoveries.",
         "status": "In progress",
-        "open_source": True
+        "open_source": True,
+        "endpoints": [
+            "/",
+            "/health", 
+            "/about",
+            "/history",
+            "/chat",
+            "/clear-chat"
+        ]
     }
 
 @app.get("/history")
@@ -66,4 +83,16 @@ async def chat(request: ChatRequest):
         conversation_history.append({"role": "user", "content": request.message})
         
         # Trim history if too long (keep system prompt + recent messages)
-        if len(conversation_history) > MAX_
+        if len(conversation_history) > MAX_HISTORY_LENGTH:
+            conversation_history[1:] = conversation_history[-(MAX_HISTORY_LENGTH-1):]
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=conversation_history,
+            max_tokens=1000,
+            temperature=0.7
+        )
+        
+        ai_response = response.choices[0].message.content
+        
+        # Add AI response to histor
