@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import openai
 import os
+from pydantic import BaseModel
 
 app = FastAPI(
     title="Serendipity AI",
@@ -10,6 +11,9 @@ app = FastAPI(
 
 # Set OpenAI API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+class ChatRequest(BaseModel):
+    message: str
 
 @app.get("/")
 def root():
@@ -25,11 +29,11 @@ def about():
     }
 
 @app.post("/chat")
-async def chat(message: str):
+async def chat(request: ChatRequest):
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": message}]
+            messages=[{"role": "user", "content": request.message}]
         )
         return {"response": response.choices[0].message.content}
     except Exception as e:
