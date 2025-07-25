@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import openai
 import os
 from pydantic import BaseModel, validator
@@ -11,6 +12,15 @@ app = FastAPI(
     title="Serendipity AI",
     description="Your supportive AI companion for delightful discoveries.",
     version="0.1.0"
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify your frontend domains
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Set OpenAI API key
@@ -95,4 +105,17 @@ async def chat(request: ChatRequest):
         
         ai_response = response.choices[0].message.content
         
-        # Add AI response to histor
+        # Add AI response to history
+        conversation_history.append({"role": "assistant", "content": ai_response})
+        
+        return {"response": ai_response}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
+
+@app.post("/clear-chat")
+async def clear_chat():
+    global conversation_history
+    conversation_history = [SYSTEM_PROMPT]
+    return {"message": "Conversation cleared"}
