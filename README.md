@@ -1,29 +1,18 @@
 # Serendipity AI
 
-Meet Serendipity AI – your always-available, supportive AI companion for insightful conversations, answers, and delightful discoveries. Ask anything, free your mind, and enjoy 24/7 help and guidance.
+Serendipity AI is your intelligent, supportive companion designed to spark delightful discoveries. Built with FastAPI, it leverages powerful AI APIs to create helpful, friendly, and responsive interactions—ideal for personal assistance, creativity, and exploration.
 
-Serendipity AI is open source and currently in progress.
+## ✨ Features
 
----
+- 🤖 AI-powered conversational agent
+- ⚡ FastAPI backend for quick performance
+- 🔌 OpenAI integration (customizable)
+- 📡 Ready for deployment on Replit & cloud platforms
 
-## Installation
-
-See [INSTALLATION.md](INSTALLATION.md) for detailed steps, or follow these quick instructions:
+## 📦 Installation
 
 ```bash
-git clone https://github.com/ESTITO-XP/serendipity-ai.git
-cd serendipity-ai
+git clone https://github.com/ESTITO-XP/Serendipity-AI.git
+cd Serendipity-AI
 pip install -r requirements.txt
-python main.py
-```
-
----
-
-## Features
-
-- Ask Anything
-- Supportive & Obedient
-- Delightful Discoveries
-- Conversational
-
----
+uvicorn main:app --reload
