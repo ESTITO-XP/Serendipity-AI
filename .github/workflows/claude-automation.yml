@@ -1,0 +1,24 @@
+name: Claude Enhancement
+
+on:
+  issues:
+    types: [opened, edited]
+  workflow_dispatch:
+
+jobs:
+  enhance:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.body, 'claude')
+    
+    steps:
+    - uses: actions/checkout@v4
+    - name: Comment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '🤖 Claude automation triggered! Working on enhancements...'
+          })
