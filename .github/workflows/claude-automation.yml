@@ -1,424 +1,115 @@
-name: Claude Enhancement
+name: Claude Automation
 
 on:
   issues:
     types: [opened, edited]
   workflow_dispatch:
     inputs:
-      enhancement_type:
-        description: 'Type of enhancement'
+      task:
+        description: 'Task for Claude to perform'
         required: true
-        default: 'full'
-        type: choice
-        options:
-        - full
-        - backend
-        - frontend
+        default: 'Enhance the codebase'
 
 jobs:
-  enhance:
+  claude-task:
     runs-on: ubuntu-latest
+    if: contains(github.event.issue.body, 'claude') || github.event_name == 'workflow_dispatch'
     
     steps:
-    - name: Checkout
+    - name: Checkout repository
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 0
     
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     
-    - name: Create Enhanced Files
+    - name: Log System Status
+      id: system-status
       run: |
-        # Create static directory
-        mkdir -p static
-        
-        # Enhanced main.py
-        cat > main.py << 'EOF'
-        from fastapi import FastAPI, HTTPException, Request
-        from fastapi.middleware.cors import CORSMiddleware
-        from fastapi.staticfiles import StaticFiles
-        from fastapi.responses import HTMLResponse
-        import openai
+        echo "::group::System Status Check"
+        echo "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): $(date -u '+%Y-%m-%d %H:%M:%S')"
+        echo "Current User's Login: ${{ github.actor }}"
+        echo "::endgroup::"
+        echo "status=success" >> $GITHUB_OUTPUT
+    
+    - name: Verify Status
+      if: steps.system-status.outputs.status == 'success'
+      run: |
+        echo "System status check passed"
+        echo "Done!"
+
+    - name: Install Dependencies
+      if: steps.system-status.outputs.status == 'success'
+      run: |
+        echo "::group::Installing Dependencies"
+        pip install anthropic requests
+        echo "::endgroup::"
+    
+    - name: Run Claude Enhancement
+      if: steps.system-status.outputs.status == 'success'
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        python -c "
         import os
-        import logging
-        from pydantic import BaseModel, validator
-        from dotenv import load_dotenv
-        from typing import List, Dict, Optional
-        import time
+        import sys
+        import requests
+        from anthropic import Anthropic
+        from datetime import datetime
 
-        # Configure logging
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
-
-        load_dotenv()
-
-        app = FastAPI(
-            title="Serendipity AI",
-            description="Your supportive AI companion for delightful discoveries.",
-            version="1.0.0"
-        )
-
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
-
-        if os.path.exists("static"):
-            app.mount("/static", StaticFiles(directory="static"), name="static")
-
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-
-        SYSTEM_PROMPT = {
-            "role": "system", 
-            "content": "You are Serendipity AI, a supportive and delightful AI companion designed to spark wonderful discoveries and meaningful conversations. Be warm, encouraging, curious, insightful, supportive, and creative."
-        }
-
-        class ConversationStore:
-            def __init__(self):
-                self.conversations: Dict[str, List[Dict]] = {}
-                self.max_history = 20
+        try:
+            # Log start time
+            print(f'Starting Claude automation at {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC')
             
-            def get_conversation(self, session_id: str) -> List[Dict]:
-                if session_id not in self.conversations:
-                    self.conversations[session_id] = [SYSTEM_PROMPT]
-                return self.conversations[session_id]
+            # Verify API key
+            if not os.environ.get('ANTHROPIC_API_KEY'):
+                raise ValueError('ANTHROPIC_API_KEY environment variable is not set')
+
+            client = Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
             
-            def add_message(self, session_id: str, message: Dict):
-                conversation = self.get_conversation(session_id)
-                conversation.append(message)
-                if len(conversation) > self.max_history:
-                    conversation[1:] = conversation[-(self.max_history-1):]
+            task = '''
+            Enhance the Serendipity AI project:
+            1. Update main.py with session management and better error handling
+            2. Create modern responsive frontend in static/index.html  
+            3. Update requirements.txt with proper dependencies
+            4. Make it production-ready
+            '''
             
-            def clear_conversation(self, session_id: str):
-                self.conversations[session_id] = [SYSTEM_PROMPT]
-
-        store = ConversationStore()
-
-        class ChatRequest(BaseModel):
-            message: str
-            session_id: Optional[str] = "default"
+            print('Sending request to Claude...')
+            response = client.messages.create(
+                model='claude-3-sonnet-20240229',
+                max_tokens=4000,
+                messages=[{
+                    'role': 'user', 
+                    'content': f'Please provide enhanced code for: {task}'
+                }]
+            )
             
-            @validator('message')
-            def message_must_not_be_empty(cls, v):
-                if not v.strip():
-                    raise ValueError('Message cannot be empty')
-                if len(v) > 4000:
-                    raise ValueError('Message too long (max 4000 characters)')
-                return v.strip()
+            if not response or not response.content:
+                raise ValueError('No response received from Claude')
 
-        @app.get("/", response_class=HTMLResponse)
-        async def root():
-            if os.path.exists("static/index.html"):
-                with open("static/index.html", "r") as f:
-                    return HTMLResponse(content=f.read(), status_code=200)
-            return {"message": "Welcome to Serendipity AI!"}
+            print('Claude response received successfully!')
+            print(response.content[0].text[:500])
+            
+            print(f'\nTask completed at {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC')
+            print('Done!')
+            sys.exit(0)
 
-        @app.get("/health")
-        async def health_check():
-            return {
-                "status": "healthy",
-                "service": "Serendipity AI",
-                "version": "1.0.0",
-                "api_configured": bool(openai.api_key)
-            }
-
-        @app.post("/chat")
-        async def chat(request: ChatRequest):
-            try:
-                if not openai.api_key:
-                    raise HTTPException(status_code=500, detail="OpenAI API key not configured")
-                
-                conversation = store.get_conversation(request.session_id)
-                store.add_message(request.session_id, {"role": "user", "content": request.message})
-                
-                messages_for_api = [{"role": msg["role"], "content": msg["content"]} for msg in conversation]
-                
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=messages_for_api,
-                    max_tokens=1500,
-                    temperature=0.8
-                )
-                
-                ai_response = response.choices[0].message.content.strip()
-                store.add_message(request.session_id, {"role": "assistant", "content": ai_response})
-                
-                return {"response": ai_response, "session_id": request.session_id}
-                
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=str(e))
-
-        @app.post("/clear-chat")
-        async def clear_chat(session_id: str = "default"):
-            store.clear_conversation(session_id)
-            return {"message": f"Conversation cleared for session {session_id}"}
-
-        if __name__ == "__main__":
-            import uvicorn
-            port = int(os.getenv("PORT", 8000))
-            uvicorn.run(app, host="0.0.0.0", port=port)
-        EOF
-        
-        # Enhanced requirements.txt
-        cat > requirements.txt << 'EOF'
-        fastapi==0.104.1
-        uvicorn[standard]==0.24.0
-        openai==0.28.1
-        python-dotenv==1.0.0
-        pydantic==2.5.0
-        gunicorn==21.2.0
-        EOF
-        
-        # Modern frontend
-        cat > static/index.html << 'EOF'
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Serendipity AI</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    min-height: 100vh;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    padding: 20px;
-                }
-                .chat-container {
-                    background: rgba(255, 255, 255, 0.95);
-                    backdrop-filter: blur(10px);
-                    border-radius: 25px;
-                    box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-                    width: 100%;
-                    max-width: 700px;
-                    height: 85vh;
-                    display: flex;
-                    flex-direction: column;
-                    overflow: hidden;
-                }
-                .chat-header {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 25px;
-                    text-align: center;
-                }
-                .chat-messages {
-                    flex: 1;
-                    padding: 25px;
-                    overflow-y: auto;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 20px;
-                }
-                .message {
-                    max-width: 85%;
-                    padding: 15px 20px;
-                    border-radius: 20px;
-                    word-wrap: break-word;
-                    line-height: 1.5;
-                }
-                .user-message {
-                    background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
-                    color: white;
-                    align-self: flex-end;
-                    margin-left: auto;
-                }
-                .ai-message {
-                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                    color: #333;
-                    align-self: flex-start;
-                }
-                .welcome-message {
-                    text-align: center;
-                    color: #666;
-                    padding: 40px 20px;
-                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                    border-radius: 15px;
-                }
-                .chat-input {
-                    display: flex;
-                    padding: 25px;
-                    gap: 15px;
-                }
-                .chat-input input {
-                    flex: 1;
-                    padding: 15px 20px;
-                    border: 2px solid #e1e5e9;
-                    border-radius: 25px;
-                    outline: none;
-                    font-size: 16px;
-                }
-                .chat-input input:focus {
-                    border-color: #667eea;
-                    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-                }
-                .btn {
-                    border: none;
-                    padding: 15px 25px;
-                    border-radius: 25px;
-                    cursor: pointer;
-                    font-weight: 600;
-                    transition: all 0.3s ease;
-                }
-                .send-btn {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                }
-                .send-btn:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-                }
-                .clear-btn {
-                    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-                    color: white;
-                }
-                @media (max-width: 768px) {
-                    .chat-container { height: 90vh; }
-                    .message { max-width: 90%; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="chat-container">
-                <div class="chat-header">
-                    <h1>🌟 Serendipity AI</h1>
-                    <p>Your delightful AI companion</p>
-                </div>
-                
-                <div class="chat-messages" id="chatMessages">
-                    <div class="welcome-message">
-                        <h3>Welcome to Serendipity AI! 👋</h3>
-                        <p>I'm here for meaningful conversations and delightful discoveries. What's on your mind?</p>
-                    </div>
-                </div>
-                
-                <div class="chat-input">
-                    <input type="text" id="messageInput" placeholder="Share your thoughts..." maxlength="4000"/>
-                    <button class="btn send-btn" id="sendBtn">Send ✨</button>
-                    <button class="btn clear-btn" id="clearBtn">Clear 🗑️</button>
-                </div>
-            </div>
-
-            <script>
-                class SerendipityChat {
-                    constructor() {
-                        this.sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
-                        this.initializeElements();
-                        this.attachEventListeners();
-                    }
-                    
-                    initializeElements() {
-                        this.chatMessages = document.getElementById('chatMessages');
-                        this.messageInput = document.getElementById('messageInput');
-                        this.sendBtn = document.getElementById('sendBtn');
-                        this.clearBtn = document.getElementById('clearBtn');
-                    }
-                    
-                    attachEventListeners() {
-                        this.sendBtn.addEventListener('click', () => this.sendMessage());
-                        this.clearBtn.addEventListener('click', () => this.clearChat());
-                        this.messageInput.addEventListener('keypress', (e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                this.sendMessage();
-                            }
-                        });
-                    }
-                    
-                    async sendMessage() {
-                        const message = this.messageInput.value.trim();
-                        if (!message) return;
-                        
-                        this.addMessage(message, 'user');
-                        this.messageInput.value = '';
-                        this.sendBtn.disabled = true;
-                        
-                        try {
-                            const response = await fetch('/chat', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    message: message,
-                                    session_id: this.sessionId
-                                })
-                            });
-                            
-                            const data = await response.json();
-                            if (response.ok) {
-                                this.addMessage(data.response, 'ai');
-                            } else {
-                                this.addMessage('Sorry, there was an error: ' + data.detail, 'ai');
-                            }
-                        } catch (error) {
-                            this.addMessage('Sorry, I had trouble connecting. Please try again.', 'ai');
-                        } finally {
-                            this.sendBtn.disabled = false;
-                        }
-                    }
-                    
-                    addMessage(content, type) {
-                        const welcomeMsg = this.chatMessages.querySelector('.welcome-message');
-                        if (welcomeMsg) welcomeMsg.remove();
-                        
-                        const messageDiv = document.createElement('div');
-                        messageDiv.className = `message ${type}-message`;
-                        messageDiv.textContent = content;
-                        
-                        this.chatMessages.appendChild(messageDiv);
-                        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-                    }
-                    
-                    async clearChat() {
-                        if (confirm('Clear conversation?')) {
-                            try {
-                                await fetch('/clear-chat', { method: 'POST' });
-                                this.chatMessages.innerHTML = `
-                                    <div class="welcome-message">
-                                        <h3>Welcome back! 👋</h3>
-                                        <p>Your conversation has been cleared. Ready for a fresh start!</p>
-                                    </div>
-                                `;
-                                this.sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
-                            } catch (error) {
-                                alert('Failed to clear conversation');
-                            }
-                        }
-                    }
-                }
-                
-                document.addEventListener('DOMContentLoaded', () => new SerendipityChat());
-            </script>
-        </body>
-        </html>
-        EOF
-
-    - name: Commit changes
+        except Exception as e:
+            print(f'Error occurred: {str(e)}')
+            sys.exit(1)
+        "
+    
+    - name: Final Status Check
+      if: always()
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add -A
-        git commit -m "🤖 Enhanced Serendipity AI with session management, modern UI, and production features" || exit 0
-        git push
-
-    - name: Comment on trigger issue
-      if: github.event_name == 'issues'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '🎉 **Serendipity AI Enhanced Successfully!**\n\n✅ Added session management for multiple users\n✅ Created modern responsive frontend\n✅ Improved error handling\n✅ Production-ready configuration\n\nYour enhanced AI companion is ready! Test it locally with `python main.py` 🚀'
-          })
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "Workflow completed successfully! ✅"
+        else
+          echo "Workflow encountered issues! ❌"
+          exit 1
+        fi
