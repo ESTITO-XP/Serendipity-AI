@@ -16,74 +16,9 @@ jobs:
     if: contains(github.event.issue.body, 'claude') || github.event_name == 'workflow_dispatch'
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-    
     - name: Log Status
       run: |
         echo "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): $(date -u '+%Y-%m-%d %H:%M:%S')"
         echo "Current User's Login: ${{ github.actor }}"
-        echo "Done!"
-    
-    - name: Install Claude CLI
-      run: |
-        pip install anthropic==0.8.1
-        pip install requests
-    
-    - name: Run Claude Enhancement
-      env:
-        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        python -c "
-        import os
-        import sys
-        import requests
-        from anthropic import Anthropic
-        
-        try:
-            client = Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
-            
-            task = '''
-            Enhance the Serendipity AI project:
-            1. Update main.py with session management and better error handling
-            2. Create modern responsive frontend in static/index.html  
-            3. Update requirements.txt with proper dependencies
-            4. Make it production-ready
-            '''
-            
-            response = client.messages.create(
-                model='claude-3-sonnet-20240229',
-                max_tokens=4000,
-                messages=[{
-                    'role': 'user', 
-                    'content': f'Please provide enhanced code for: {task}'
-                }]
-            )
-            
-            print('Claude response received!')
-            print(response.content[0].text[:500])
-            
-        except Exception as e:
-            print(f'Error occurred: {str(e)}')
-            sys.exit(1)
-        "
-    
-    - name: Comment on Issue
-      if: github.event_name == 'issues'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '🤖 Claude automation has completed processing your request! Check the Actions tab for results.'
-          })
+        echo "No, right now the time is 04:23 PM i.e.16:23:29"
+        exit 1
