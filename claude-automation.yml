@@ -38,31 +38,46 @@ jobs:
       run: |
         python -c "
         import os
+        import sys
         import requests
         from anthropic import Anthropic
-        
-        # Basic Claude automation script
-        client = Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
-        
-        task = '''
-        Enhance the Serendipity AI project:
-        1. Update main.py with session management and better error handling
-        2. Create modern responsive frontend in static/index.html  
-        3. Update requirements.txt with proper dependencies
-        4. Make it production-ready
-        '''
-        
-        response = client.messages.create(
-            model='claude-3-sonnet-20240229',
-            max_tokens=4000,
-            messages=[{
-                'role': 'user', 
-                'content': f'Please provide enhanced code for: {task}'
-            }]
-        )
-        
-        print('Claude response received!')
-        print(response.content[0].text[:500])
+
+        try:
+            # Verify API key exists
+            if not os.environ.get('ANTHROPIC_API_KEY'):
+                raise ValueError('ANTHROPIC_API_KEY environment variable is not set')
+
+            # Basic Claude automation script
+            client = Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
+            
+            task = '''
+            Enhance the Serendipity AI project:
+            1. Update main.py with session management and better error handling
+            2. Create modern responsive frontend in static/index.html  
+            3. Update requirements.txt with proper dependencies
+            4. Make it production-ready
+            '''
+            
+            response = client.messages.create(
+                model='claude-3-sonnet-20240229',
+                max_tokens=4000,
+                messages=[{
+                    'role': 'user', 
+                    'content': f'Please provide enhanced code for: {task}'
+                }]
+            )
+            
+            # Verify we got a response
+            if not response or not response.content:
+                raise ValueError('No response received from Claude')
+
+            print('Claude response received successfully!')
+            print(response.content[0].text[:500])
+            sys.exit(0)  # Explicit successful exit
+
+        except Exception as e:
+            print(f'Error occurred: {str(e)}')
+            sys.exit(1)  # Explicit failure exit
         "
     
     - name: Comment on Issue
@@ -74,5 +89,5 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '🤖 Claude automation has started processing your request! Check the Actions tab for progress.'
+            body: '🤖 Claude automation has completed processing your request! Check the Actions tab for results.'
           })
