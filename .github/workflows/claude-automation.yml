@@ -20,5 +20,5 @@ jobs:
       run: |
         echo "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): $(date -u '+%Y-%m-%d %H:%M:%S')"
         echo "Current User's Login: ${{ github.actor }}"
-        echo "No, right now the time is 04:23 PM i.e.16:23:29"
-        exit 1
+        echo "Hello, ESTITO!"
+        exit 0
