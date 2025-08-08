@@ -26,30 +26,18 @@ jobs:
       with:
         python-version: '3.9'
     
-    - name: Log System Status
-      id: system-status
+    - name: Log Status
       run: |
-        echo "::group::System Status Check"
         echo "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): $(date -u '+%Y-%m-%d %H:%M:%S')"
         echo "Current User's Login: ${{ github.actor }}"
-        echo "::endgroup::"
-        echo "status=success" >> $GITHUB_OUTPUT
-    
-    - name: Verify Status
-      if: steps.system-status.outputs.status == 'success'
-      run: |
-        echo "System status check passed"
         echo "Done!"
-
-    - name: Install Dependencies
-      if: steps.system-status.outputs.status == 'success'
+    
+    - name: Install Claude CLI
       run: |
-        echo "::group::Installing Dependencies"
-        pip install anthropic requests
-        echo "::endgroup::"
+        pip install anthropic==0.8.1
+        pip install requests
     
     - name: Run Claude Enhancement
-      if: steps.system-status.outputs.status == 'success'
       env:
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -59,16 +47,8 @@ jobs:
         import sys
         import requests
         from anthropic import Anthropic
-        from datetime import datetime
-
+        
         try:
-            # Log start time
-            print(f'Starting Claude automation at {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC')
-            
-            # Verify API key
-            if not os.environ.get('ANTHROPIC_API_KEY'):
-                raise ValueError('ANTHROPIC_API_KEY environment variable is not set')
-
             client = Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
             
             task = '''
@@ -79,7 +59,6 @@ jobs:
             4. Make it production-ready
             '''
             
-            print('Sending request to Claude...')
             response = client.messages.create(
                 model='claude-3-sonnet-20240229',
                 max_tokens=4000,
@@ -89,27 +68,22 @@ jobs:
                 }]
             )
             
-            if not response or not response.content:
-                raise ValueError('No response received from Claude')
-
-            print('Claude response received successfully!')
+            print('Claude response received!')
             print(response.content[0].text[:500])
             
-            print(f'\nTask completed at {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC')
-            print('Done!')
-            sys.exit(0)
-
         except Exception as e:
             print(f'Error occurred: {str(e)}')
             sys.exit(1)
         "
     
-    - name: Final Status Check
-      if: always()
-      run: |
-        if [ "${{ job.status }}" == "success" ]; then
-          echo "Workflow completed successfully! ✅"
-        else
-          echo "Workflow encountered issues! ❌"
-          exit 1
-        fi
+    - name: Comment on Issue
+      if: github.event_name == 'issues'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '🤖 Claude automation has completed processing your request! Check the Actions tab for results.'
+          })
