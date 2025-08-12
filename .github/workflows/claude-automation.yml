@@ -13,12 +13,93 @@ on:
 jobs:
   claude-task:
     runs-on: ubuntu-latest
-    if: contains(github.event.issue.body, 'claude') || github.event_name == 'workflow_dispatch'
+    if: "contains(github.event.issue.body, 'claude') || github.event_name == 'workflow_dispatch'"
     
     steps:
-    - name: Log Status
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
       run: |
-        echo "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): $(date -u '+%Y-%m-%d %H:%M:%S')"
-        echo "Current User's Login: ${{ github.actor }}"
-        echo "Hello, ESTITO!"
-        exit 0
+        pip install anthropic requests
+
+    - name: Define Task
+      id: get_task
+      run: |
+        if [ "${{ github.event_name }}" == "issues" ]; then
+          echo "task=${{ github.event.issue.body }}" >> $GITHUB_OUTPUT
+        else
+          echo "task=${{ github.event.inputs.task }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Read File Contents
+      id: file_contents
+      run: |
+        echo "MAIN_PY_CONTENT<<EOF" >> $GITHUB_ENV
+        cat main.py >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+        echo "INDEX_HTML_CONTENT<<EOF" >> $GITHUB_ENV
+        cat static/index.html >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+        echo "REQS_TXT_CONTENT<<EOF" >> $GITHUB_ENV
+        cat requirements.txt >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Run Claude Enhancement
+      id: claude_enhancement
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        CLAUDE_TASK: ${{ steps.get_task.outputs.task }}
+      run: |
+        CLAUDE_RESPONSE=$(python run_claude.py)
+        echo "claude_response<<EOF" >> $GITHUB_OUTPUT
+        echo "$CLAUDE_RESPONSE" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Apply Changes
+      run: |
+        python apply_changes.py "${{ steps.claude_enhancement.outputs.claude_response }}"
+
+    - name: Create Pull Request
+      id: cpr
+      uses: peter-evans/create-pull-request@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "Automated fixes by Claude"
+        branch: claude-fixes-${{ github.event.issue.number || github.run_id }}
+        delete-branch: true
+        title: "Claude's Automated Fixes for Issue #${{ github.event.issue.number || 'N/A' }}"
+        body: |
+          Claude has made some automated changes based on the following request:
+          > ${{ steps.get_task.outputs.task }}
+
+          Please review and merge.
+        labels: claude-automated
+
+    - name: Comment on Issue
+      if: github.event_name == 'issues'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const date = new Date().toISOString().replace('T', ' ').substr(0, 19);
+          let body = `🤖 Claude automation has completed at ${date} UTC!`;
+          if ("${{ steps.cpr.outputs.pull-request-number }}") {
+            body += `\n\nPlease review the proposed changes in PR #${{ steps.cpr.outputs.pull-request-number }}.`;
+          } else {
+            body += `\n\nNo changes were made, or the pull request could not be created. Please check the Actions tab for details.`;
+          }
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          })
