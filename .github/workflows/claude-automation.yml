@@ -1,7 +1,9 @@
-name: Claude Automation
+name: Claude Automation Enhanced
 
 on:
   issues:
+    types: [opened, edited, labeled]
+  pull_request:
     types: [opened, edited]
   workflow_dispatch:
     inputs:
@@ -9,16 +11,451 @@ on:
         description: 'Task for Claude to perform'
         required: true
         default: 'Enhance the codebase'
+      branch_name:
+        description: 'Branch name for changes'
+        required: false
+        default: 'claude-enhancement'
+      create_pr:
+        description: 'Create Pull Request'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
+
+env:
+  PYTHON_VERSION: '3.9'
+  NODE_VERSION: '18'
 
 jobs:
-  claude-task:
+  # Security and validation job
+  validate:
     runs-on: ubuntu-latest
-    if: contains(github.event.issue.body, 'claude') || github.event_name == 'workflow_dispatch'
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      task_type: ${{ steps.check.outputs.task_type }}
+    steps:
+    - name: Validate Trigger
+      id: check
+      run: |
+        echo "Event: ${{ github.event_name }}"
+        echo "Actor: ${{ github.actor }}"
+        
+        # Check if this should run
+        SHOULD_RUN=false
+        TASK_TYPE="unknown"
+        
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          SHOULD_RUN=true
+          TASK_TYPE="manual"
+        elif [[ "${{ github.event_name }}" == "issues" ]] && [[ "${{ contains(github.event.issue.body, 'claude') || contains(github.event.issue.labels.*.name, 'claude-automation') }}" == "true" ]]; then
+          SHOULD_RUN=true
+          TASK_TYPE="issue"
+        elif [[ "${{ github.event_name }}" == "pull_request" ]] && [[ "${{ contains(github.event.pull_request.body, 'claude') }}" == "true" ]]; then
+          SHOULD_RUN=true
+          TASK_TYPE="pr"
+        fi
+        
+        echo "should_run=$SHOULD_RUN" >> $GITHUB_OUTPUT
+        echo "task_type=$TASK_TYPE" >> $GITHUB_OUTPUT
+        echo "Should run: $SHOULD_RUN"
+        echo "Task type: $TASK_TYPE"
+
+  # Main Claude automation job
+  claude-enhancement:
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.should_run == 'true'
     
     steps:
-    - name: Log Status
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
       run: |
-        echo "Current Date and Time (UTC - YYYY-MM-DD HH:MM:SS formatted): $(date -u '+%Y-%m-%d %H:%M:%S')"
-        echo "Current User's Login: ${{ github.actor }}"
-        echo "Hello, ESTITO!"
-        exit 0
+        python -m pip install --upgrade pip
+        pip install anthropic requests python-dotenv
+        
+    - name: Setup Environment
+      run: |
+        echo "TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+        echo "BRANCH_NAME=claude-fixes-${{ github.run_id }}" >> $GITHUB_ENV
+        echo "SESSION_ID=gh-${{ github.run_id }}" >> $GITHUB_ENV
+
+    - name: Determine Task
+      id: task
+      run: |
+        TASK=""
+        if [[ "${{ needs.validate.outputs.task_type }}" == "manual" ]]; then
+          TASK="${{ github.event.inputs.task }}"
+        elif [[ "${{ needs.validate.outputs.task_type }}" == "issue" ]]; then
+          TASK="${{ github.event.issue.title }}: ${{ github.event.issue.body }}"
+        elif [[ "${{ needs.validate.outputs.task_type }}" == "pr" ]]; then
+          TASK="Review and enhance PR: ${{ github.event.pull_request.title }}"
+        else
+          TASK="General code enhancement and optimization"
+        fi
+        
+        echo "task<<EOF" >> $GITHUB_OUTPUT
+        echo "$TASK" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        echo "Determined task: $TASK"
+
+    - name: Read Project Files
+      id: files
+      run: |
+        # Function to safely read file content
+        read_file_safe() {
+          local file="$1"
+          if [[ -f "$file" ]]; then
+            cat "$file" | head -c 10000  # Limit to 10KB per file
+          else
+            echo "File not found: $file"
+          fi
+        }
+        
+        # Read main project files
+        echo "main_py<<EOF" >> $GITHUB_OUTPUT
+        read_file_safe "main.py" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        echo "requirements_txt<<EOF" >> $GITHUB_OUTPUT
+        read_file_safe "requirements.txt" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        echo "index_html<<EOF" >> $GITHUB_OUTPUT
+        read_file_safe "static/index.html" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        echo "readme_md<<EOF" >> $GITHUB_OUTPUT
+        read_file_safe "README.md" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Run Claude Enhancement
+      id: claude
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TASK: ${{ steps.task.outputs.task }}
+      run: |
+        python3 << 'EOF'
+        import os
+        import sys
+        import json
+        import re
+        from datetime import datetime
+        from anthropic import Anthropic
+
+        def main():
+            try:
+                print(f"🚀 Starting Claude enhancement at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+                print(f"👤 Running as: {os.environ.get('GITHUB_ACTOR', 'unknown')}")
+                print(f"🔧 Session: {os.environ.get('SESSION_ID', 'unknown')}")
+                
+                # Verify API key
+                api_key = os.environ.get('ANTHROPIC_API_KEY')
+                if not api_key:
+                    raise ValueError("ANTHROPIC_API_KEY not found in environment")
+                
+                # Initialize Claude client
+                client = Anthropic(api_key=api_key)
+                
+                # Get task and file contents
+                task = os.environ.get('TASK', 'Enhance the codebase')
+                
+                # Build comprehensive prompt
+                prompt = f"""
+        You are an expert software engineer and AI assistant. Your task is to enhance the Serendipity AI project based on the following request:
+
+        **Task:** {task}
+
+        **Current Project Structure:**
+        - FastAPI backend with OpenAI integration
+        - HTML/CSS/JavaScript frontend
+        - GitHub Actions automation
+        - Python dependencies management
+
+        **Files to consider:**
+
+        **main.py** (FastAPI backend):
+        ```python
+        {os.environ.get('MAIN_PY', 'Content not available')}
+        ```
+
+        **requirements.txt**:
+        ```
+        {os.environ.get('REQUIREMENTS_TXT', 'Content not available')}
+        ```
+
+        **static/index.html** (Frontend):
+        ```html
+        {os.environ.get('INDEX_HTML', 'Content not available')}
+        ```
+
+        **Instructions:**
+        1. Analyze the current codebase and identify improvements
+        2. Enhance code quality, security, and performance
+        3. Fix any bugs or issues you identify
+        4. Add helpful features that align with the task
+        5. Ensure mobile responsiveness and modern UI/UX
+        6. Provide production-ready code
+
+        **Output Format:**
+        For each file you want to modify, provide the complete updated content in this format:
+
+        ```filename.ext
+        [complete file content here]
+        ```
+
+        Only include files that need changes. Provide complete file contents, not just snippets.
+        """
+                
+                print("📝 Sending request to Claude...")
+                
+                # Call Claude API
+                response = client.messages.create(
+                    model="claude-3-sonnet-20240229",
+                    max_tokens=4000,
+                    temperature=0.3,
+                    messages=[{
+                        "role": "user",
+                        "content": prompt
+                    }]
+                )
+                
+                if not response or not response.content:
+                    raise ValueError("No response received from Claude")
+                
+                response_text = response.content[0].text
+                print("✅ Claude response received!")
+                print(f"Response length: {len(response_text)} characters")
+                
+                # Save response to file for the next step
+                with open('claude_response.txt', 'w', encoding='utf-8') as f:
+                    f.write(response_text)
+                
+                # Extract file blocks for summary
+                file_blocks = re.findall(r'```(\S+)\s*\n', response_text)
+                if file_blocks:
+                    print(f"📁 Files to be modified: {', '.join(file_blocks)}")
+                else:
+                    print("⚠️  No file modifications detected in response")
+                
+                print(f"🎉 Enhancement completed at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+                
+            except Exception as e:
+                print(f"❌ Error: {str(e)}")
+                sys.exit(1)
+
+        if __name__ == "__main__":
+            main()
+        EOF
+
+    - name: Apply Changes
+      id: apply
+      run: |
+        python3 << 'EOF'
+        import os
+        import re
+        import sys
+        from pathlib import Path
+
+        def apply_changes():
+            try:
+                # Read Claude's response
+                if not os.path.exists('claude_response.txt'):
+                    print("No Claude response file found")
+                    return False
+                
+                with open('claude_response.txt', 'r', encoding='utf-8') as f:
+                    response = f.read()
+                
+                print("🔧 Applying changes from Claude...")
+                
+                # Extract file blocks using regex
+                pattern = r'```(\S+)\s*\n(.*?)\n```'
+                matches = re.findall(pattern, response, re.DOTALL)
+                
+                if not matches:
+                    print("⚠️  No file blocks found in Claude's response")
+                    return True  # Not an error, just nothing to apply
+                
+                changes_made = []
+                
+                for file_path, content in matches:
+                    file_path = file_path.strip()
+                    
+                    # Security check - prevent directory traversal
+                    if '..' in file_path or file_path.startswith('/'):
+                        print(f"❌ Skipping unsafe file path: {file_path}")
+                        continue
+                    
+                    # Create directory if needed
+                    dir_path = os.path.dirname(file_path)
+                    if dir_path:
+                        Path(dir_path).mkdir(parents=True, exist_ok=True)
+                    
+                    # Write file
+                    try:
+                        with open(file_path, 'w', encoding='utf-8') as f:
+                            f.write(content.strip())
+                        print(f"✅ Updated: {file_path}")
+                        changes_made.append(file_path)
+                    except Exception as e:
+                        print(f"❌ Error writing {file_path}: {e}")
+                
+                if changes_made:
+                    print(f"📝 Modified {len(changes_made)} files: {', '.join(changes_made)}")
+                    
+                    # Set output for next steps
+                    with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                        f.write(f"changes_made=true\n")
+                        f.write(f"modified_files={','.join(changes_made)}\n")
+                else:
+                    print("ℹ️  No changes applied")
+                    with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                        f.write(f"changes_made=false\n")
+                
+                return True
+                
+            except Exception as e:
+                print(f"❌ Error applying changes: {e}")
+                return False
+
+        if __name__ == "__main__":
+            success = apply_changes()
+            sys.exit(0 if success else 1)
+        EOF
+
+    - name: Commit Changes
+      if: steps.apply.outputs.changes_made == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "Claude Automation"
+        
+        # Create and switch to new branch
+        git checkout -b ${{ env.BRANCH_NAME }}
+        
+        # Add all changes
+        git add -A
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        else
+          git commit -m "🤖 Automated enhancements by Claude
+
+        Task: ${{ steps.task.outputs.task }}
+        Session: ${{ env.SESSION_ID }}
+        Files modified: ${{ steps.apply.outputs.modified_files }}
+        Timestamp: ${{ env.TIMESTAMP }} UTC"
+          
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          echo "✅ Changes committed to branch ${{ env.BRANCH_NAME }}"
+        fi
+
+    - name: Create Pull Request
+      if: steps.apply.outputs.changes_made == 'true' && (github.event.inputs.create_pr != 'false')
+      id: pr
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ env.BRANCH_NAME }}
+        title: "🤖 Claude Enhancement: ${{ steps.task.outputs.task }}"
+        body: |
+          ## 🤖 Automated Enhancement by Claude
+          
+          **Task:** ${{ steps.task.outputs.task }}
+          **Session ID:** ${{ env.SESSION_ID }}
+          **Timestamp:** ${{ env.TIMESTAMP }} UTC
+          **Triggered by:** @${{ github.actor }}
+          
+          ### 📁 Files Modified
+          ${{ steps.apply.outputs.modified_files }}
+          
+          ### 🔍 Review Notes
+          - This PR was automatically generated by Claude AI
+          - Please review all changes carefully before merging
+          - Test the application thoroughly after deployment
+          
+          ### 📋 Checklist
+          - [ ] Code review completed
+          - [ ] Tests pass (if applicable)
+          - [ ] UI/UX verified
+          - [ ] Security considerations reviewed
+          
+          ---
+          *Generated by GitHub Actions workflow at ${{ env.TIMESTAMP }} UTC*
+        labels: |
+          claude-automation
+          enhancement
+          automated
+        draft: false
+        delete-branch: true
+
+    - name: Update Issue (if applicable)
+      if: needs.validate.outputs.task_type == 'issue' && steps.pr.outputs.pull-request-number
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const prNumber = '${{ steps.pr.outputs.pull-request-number }}';
+          const timestamp = '${{ env.TIMESTAMP }}';
+          
+          const body = `🤖 **Claude Automation Complete!**
+          
+          ✅ **Status:** Enhancement completed successfully
+          🕒 **Completed at:** ${timestamp} UTC
+          🔗 **Pull Request:** #${prNumber}
+          👤 **Triggered by:** @${{ github.actor }}
+          
+          Please review the changes in the linked PR above. The automation has:
+          - Analyzed your request
+          - Enhanced the codebase accordingly
+          - Created a pull request with the improvements
+          
+          **Next Steps:**
+          1. Review the PR changes
+          2. Test the enhancements
+          3. Merge if everything looks good
+          
+          ---
+          *Automated response from Claude AI workflow*`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
+
+    - name: Summary Report
+      if: always()
+      run: |
+        echo "## 📊 Claude Automation Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Timestamp:** ${{ env.TIMESTAMP }} UTC" >> $GITHUB_STEP_SUMMARY
+        echo "- **Task Type:** ${{ needs.validate.outputs.task_type }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Session ID:** ${{ env.SESSION_ID }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Changes Applied:** ${{ steps.apply.outputs.changes_made || 'false' }}" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ steps.pr.outputs.pull-request-number }}" != "" ]]; then
+          echo "- **Pull Request:** #${{ steps.pr.outputs.pull-request-number }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [[ "${{ steps.apply.outputs.modified_files }}" != "" ]]; then
+          echo "- **Modified Files:** ${{ steps.apply.outputs.modified_files }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🎯 Task Completed" >> $GITHUB_STEP_SUMMARY
+        echo "${{ steps.task.outputs.task }}" >> $GITHUB_STEP_SUMMARY
