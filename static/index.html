@@ -39,6 +39,16 @@
             text-align: center;
         }
         
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .chat-header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
         .chat-messages {
             flex: 1;
             padding: 20px;
@@ -48,11 +58,24 @@
             gap: 15px;
         }
         
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+        
         .message {
             max-width: 80%;
             padding: 12px 16px;
             border-radius: 18px;
             word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .user-message {
@@ -66,6 +89,41 @@
             background: #f1f1f1;
             color: #333;
             align-self: flex-start;
+        }
+        
+        .typing-indicator {
+            background: #f1f1f1;
+            color: #666;
+            align-self: flex-start;
+            display: none;
+            align-items: center;
+        }
+        
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+        
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+            animation: pulse 1.4s ease-in-out infinite both;
+        }
+        
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes pulse {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
         
         .chat-input {
@@ -82,6 +140,7 @@
             border-radius: 25px;
             outline: none;
             font-size: 16px;
+            transition: border-color 0.3s ease;
         }
         
         .chat-input input:focus {
@@ -96,17 +155,200 @@
             border-radius: 25px;
             cursor: pointer;
             font-weight: bold;
+            transition: opacity 0.3s ease;
+            min-width: 70px;
         }
         
-        .chat-input button:hover {
+        .chat-input button:hover:not(:disabled) {
             opacity: 0.9;
+        }
+        
+        .chat-input button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         
         .clear-btn {
             background: #ff3b30 !important;
             margin-left: 10px;
         }
+        
+        .status-indicator {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+        }
+        
+        .status-indicator.offline {
+            background: #f44336;
+        }
+        
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 95%;
+                height: 90vh;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+        }
     </style>
 </head>
 <body>
-    <div clas
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="status-indicator" id="status"></div>
+            <h1>Serendipity AI</h1>
+            <p>Your supportive AI companion for delightful discoveries</p>
+        </div>
+        
+        <div class="chat-messages" id="messages">
+            <div class="welcome-message">
+                Welcome! I'm Serendipity AI, ready to help you explore ideas and spark meaningful conversations. What would you like to talk about today?
+            </div>
+        </div>
+        
+        <div class="typing-indicator message" id="typing">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type your message..." maxlength="4000">
+            <button onclick="sendMessage()" id="sendBtn">Send</button>
+            <button onclick="clearChat()" class="clear-btn" id="clearBtn">Clear</button>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = 'user-' + Math.random().toString(36).substr(2, 9);
+        
+        // Check API status on load
+        checkApiStatus();
+        
+        // Handle Enter key
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        async function checkApiStatus() {
+            try {
+                const response = await fetch('/health');
+                const status = document.getElementById('status');
+                if (response.ok) {
+                    status.classList.remove('offline');
+                } else {
+                    status.classList.add('offline');
+                }
+            } catch (error) {
+                document.getElementById('status').classList.add('offline');
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const messagesContainer = document.getElementById('messages');
+            const sendBtn = document.getElementById('sendBtn');
+            const typing = document.getElementById('typing');
+            
+            // Remove welcome message if it exists
+            const welcomeMessage = messagesContainer.querySelector('.welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+            }
+            
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // Disable send button and show typing
+            sendBtn.disabled = true;
+            sendBtn.textContent = '...';
+            typing.style.display = 'flex';
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to get response');
+                }
+                
+                const data = await response.json();
+                addMessage(data.response, 'ai');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage(`Sorry, I encountered an error: ${error.message}`, 'ai');
+            } finally {
+                // Re-enable send button and hide typing
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+                typing.style.display = 'none';
+            }
+        }
+        
+        function addMessage(text, sender) {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        async function clearChat() {
+            if (!confirm('Are you sure you want to clear the conversation?')) return;
+            
+            try {
+                const response = await fetch('/clear-chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(sessionId)
+                });
+                
+                if (response.ok) {
+                    const messagesContainer = document.getElementById('messages');
+                    messagesContainer.innerHTML = `
+                        <div class="welcome-message">
+                            Conversation cleared! I'm ready for a fresh start. What would you like to talk about?
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error clearing chat:', error);
+            }
+        }
+        
+        // Auto-focus on input
+        document.getElementById('messageInput').focus();
+    </script>
+</body>
+    </html>
