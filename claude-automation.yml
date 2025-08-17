@@ -24,74 +24,141 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
     
     - name: Log Execution Context
       run: |
         echo "Current Date and Time (UTC): $(date -u '+%Y-%m-%d %H:%M:%S')"
         echo "Current User's Login: ${{ github.actor }}"
+        echo "Event: ${{ github.event_name }}"
         echo "Done!"
     
-    - name: Install Claude CLI
+    - name: Install dependencies
       run: |
-        pip install anthropic
+        pip install --upgrade pip
+        pip install anthropic==0.34.0
         pip install requests
+    
+    - name: Debug Environment
+      run: |
+        echo "Checking environment variables..."
+        if [ -z "$ANTHROPIC_API_KEY" ]; then
+          echo "❌ ANTHROPIC_API_KEY is not set!"
+        else
+          echo "✅ ANTHROPIC_API_KEY is set"
+        fi
+        if [ -z "$GITHUB_TOKEN" ]; then
+          echo "❌ GITHUB_TOKEN is not set!"  
+        else
+          echo "✅ GITHUB_TOKEN is set"
+        fi
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Run Claude Enhancement
       env:
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        python -c "
+        python3 << 'EOF'
         import os
         import sys
         import requests
-        from anthropic import Anthropic
         from datetime import datetime
 
-        try:
-            print(f'Starting Claude automation at {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC')
-            print(f'Running as user: {os.environ.get("GITHUB_ACTOR", "unknown")}\n')
+        def main():
+            try:
+                print(f'🚀 Starting Claude automation at {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC')
+                print(f'👤 Running as user: {os.environ.get("GITHUB_ACTOR", "unknown")}\n')
 
-            # Verify API key exists
-            if not os.environ.get('ANTHROPIC_API_KEY'):
-                raise ValueError('ANTHROPIC_API_KEY environment variable is not set')
+                # Check API key
+                api_key = os.environ.get('ANTHROPIC_API_KEY')
+                if not api_key:
+                    print('❌ ERROR: ANTHROPIC_API_KEY environment variable is not set')
+                    print('Please add your Anthropic API key to repository secrets')
+                    return False
 
-            # Basic Claude automation script
-            client = Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
-            
-            task = '''
-            Enhance the Serendipity AI project:
-            1. Update main.py with session management and better error handling
-            2. Create modern responsive frontend in static/index.html  
-            3. Update requirements.txt with proper dependencies
-            4. Make it production-ready
-            '''
-            
-            response = client.messages.create(
-                model='claude-3-sonnet-20240229',
-                max_tokens=4000,
-                messages=[{
-                    'role': 'user', 
-                    'content': f'Please provide enhanced code for: {task}'
-                }]
-            )
-            
-            # Verify we got a response
-            if not response or not response.content:
-                raise ValueError('No response received from Claude')
+                if not api_key.startswith('sk-'):
+                    print('❌ ERROR: Invalid API key format')
+                    return False
 
-            print('Claude response received successfully!')
-            print(response.content[0].text[:500])
-            
-            print(f'\nTask completed at {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC')
-            print('Done!')
-            sys.exit(0)  # Explicit successful exit
+                print('✅ API key validation passed')
 
-        except Exception as e:
-            print(f'Error occurred: {str(e)}')
-            sys.exit(1)  # Explicit failure exit
-        "
+                # Import and test Anthropic
+                try:
+                    from anthropic import Anthropic
+                    client = Anthropic(api_key=api_key)
+                    print('✅ Anthropic client initialized')
+                except ImportError as e:
+                    print(f'❌ ERROR importing anthropic: {e}')
+                    return False
+                except Exception as e:
+                    print(f'❌ ERROR creating client: {e}')
+                    return False
+
+                # Get task from workflow input or use default
+                task = os.environ.get('INPUT_TASK', 'Enhance the Serendipity AI project with better error handling and modern frontend')
+
+                print(f'📋 Task: {task[:100]}...')
+
+                # Make API call with updated model
+                try:
+                    print('🤖 Calling Claude API...')
+                    response = client.messages.create(
+                        model='claude-3-5-sonnet-20241022',  # Updated model
+                        max_tokens=4000,
+                        messages=[{
+                            'role': 'user', 
+                            'content': f'Please provide enhanced code suggestions for: {task}'
+                        }]
+                    )
+                    print('✅ Claude API call successful!')
+                except Exception as e:
+                    print(f'❌ ERROR calling Claude API: {e}')
+                    # Try fallback model
+                    try:
+                        print('🔄 Trying fallback model...')
+                        response = client.messages.create(
+                            model='claude-3-sonnet-20240229',
+                            max_tokens=4000,
+                            messages=[{
+                                'role': 'user', 
+                                'content': f'Please provide enhanced code suggestions for: {task}'
+                            }]
+                        )
+                        print('✅ Fallback API call successful!')
+                    except Exception as e2:
+                        print(f'❌ ERROR with fallback model: {e2}')
+                        return False
+
+                # Verify response
+                if not response or not response.content:
+                    print('❌ ERROR: No response content received from Claude')
+                    return False
+
+                response_text = response.content[0].text
+                print(f'✅ Received response ({len(response_text)} characters)')
+                print(f'📄 Preview: {response_text[:200]}...\n')
+                
+                print(f'✅ Task completed at {datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")} UTC')
+                return True
+
+            except Exception as e:
+                print(f'❌ Unexpected error: {str(e)}')
+                import traceback
+                traceback.print_exc()
+                return False
+
+        # Run main function
+        success = main()
+        if not success:
+            print('\n💥 Automation failed!')
+            sys.exit(1)
+        else:
+            print('\n🎉 Automation completed successfully!')
+            sys.exit(0)
+        EOF
     
     - name: Comment on Issue
       if: github.event_name == 'issues'
@@ -103,5 +170,5 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: `🤖 Claude automation has completed processing your request at ${date} UTC!\nCheck the Actions tab for results.`
+            body: `🤖 Claude automation has completed processing your request at ${date} UTC!\n\n✅ Check the [Actions tab](${context.payload.repository.html_url}/actions) for detailed results.`
           })
