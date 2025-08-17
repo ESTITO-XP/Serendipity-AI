@@ -1,4 +1,4 @@
-name: Claude Workflow
+name: Claude Automation
 
 on:
   workflow_dispatch:
@@ -93,8 +93,10 @@ jobs:
         echo "✅ requests installed"
         
         echo "Installing Anthropic..."
-        if pip install anthropic==0.34.0; then
+        if pip install anthropic>=0.25.0; then
           echo "✅ anthropic installed successfully"
+          echo "Installed version:"
+          pip show anthropic | grep Version
         else
           echo "❌ anthropic installation failed"
           exit 1
@@ -128,14 +130,29 @@ jobs:
             else:
                 print(f"✅ API key format looks correct: {api_key[:10]}...")
             
-            # Test Anthropic import
+            # Test Anthropic import and client creation
             try:
                 from anthropic import Anthropic
                 print("✅ Anthropic library imported successfully")
                 
-                # Test client creation (but don't make API call yet)
-                client = Anthropic(api_key=api_key)
+                # Create client with minimal parameters to avoid conflicts
+                client = Anthropic(
+                    api_key=api_key,
+                    # Remove any potentially problematic parameters
+                )
                 print("✅ Anthropic client created successfully")
+                
+            except TypeError as e:
+                print(f"❌ Client creation failed - parameter issue: {e}")
+                print("Trying alternative client creation...")
+                try:
+                    # Try with even more basic initialization
+                    import anthropic
+                    client = anthropic.Anthropic(api_key=api_key)
+                    print("✅ Alternative client creation successful")
+                except Exception as e2:
+                    print(f"❌ Alternative client creation also failed: {e2}")
+                    sys.exit(1)
                 
             except ImportError as e:
                 print(f"❌ Failed to import Anthropic: {e}")
@@ -164,7 +181,9 @@ jobs:
         from datetime import datetime
         
         try:
+            # Create client with basic parameters only
             client = Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
+            print("✅ Anthropic client created successfully")
             
             print("Making test API call with latest model...")
             try:
