@@ -1,4 +1,4 @@
-name: Debug Claude Workflow
+name: Claude Workflow
 
 on:
   workflow_dispatch:
@@ -16,8 +16,12 @@ on:
 jobs:
   debug:
     runs-on: ubuntu-latest
-    
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
     - name: Environment Check
       run: |
         echo "🔍 ENVIRONMENT DEBUG"
@@ -30,6 +34,11 @@ jobs:
         echo "Event: ${{ github.event_name }}"
         echo ""
 
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
     - name: Secrets Check
       run: |
         echo "🔐 SECRETS CHECK"
@@ -50,11 +59,6 @@ jobs:
         echo ""
       env:
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-
-    - name: Checkout Test
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: File System Check
       run: |
@@ -79,31 +83,17 @@ jobs:
         done
         echo ""
 
-    - name: Python Setup Test
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-
-    - name: Python Environment Check
+    - name: Install dependencies
       run: |
-        echo "🐍 PYTHON ENVIRONMENT"
-        echo "===================="
-        echo "Python version: $(python --version)"
-        echo "Pip version: $(pip --version)"
-        echo "Python path: $(which python)"
-        echo ""
-
-    - name: Dependencies Install Test
-      run: |
-        echo "📦 DEPENDENCIES TEST"
-        echo "==================="
-        
+        echo "📦 DEPENDENCIES INSTALL"
+        echo "======================="
+        pip install --upgrade pip
         echo "Installing basic dependencies..."
         pip install requests
         echo "✅ requests installed"
         
-        echo "Testing Anthropic install..."
-        if pip install anthropic; then
+        echo "Installing Anthropic..."
+        if pip install anthropic==0.34.0; then
           echo "✅ anthropic installed successfully"
         else
           echo "❌ anthropic installation failed"
@@ -113,7 +103,7 @@ jobs:
         echo "Checking installed packages:"
         pip list | grep -E "(anthropic|requests)"
         echo ""
-
+    
     - name: API Connection Test
       if: github.event.inputs.debug_level != 'basic'
       env:
@@ -171,19 +161,34 @@ jobs:
         import os
         import sys
         from anthropic import Anthropic
+        from datetime import datetime
         
         try:
             client = Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
             
-            print("Making test API call...")
-            response = client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=50,
-                messages=[{
-                    "role": "user", 
-                    "content": "Say 'API test successful' and nothing else."
-                }]
-            )
+            print("Making test API call with latest model...")
+            try:
+                response = client.messages.create(
+                    model="claude-3-5-sonnet-20241022",
+                    max_tokens=100,
+                    messages=[{
+                        "role": "user", 
+                        "content": "Say 'API test successful with Claude 3.5 Sonnet' and the current date."
+                    }]
+                )
+                print("✅ Latest model API call successful")
+            except Exception as e:
+                print(f"⚠️  Latest model failed: {e}")
+                print("Trying fallback model...")
+                response = client.messages.create(
+                    model="claude-3-sonnet-20240229",
+                    max_tokens=100,
+                    messages=[{
+                        "role": "user", 
+                        "content": "Say 'API test successful with fallback model' and the current date."
+                    }]
+                )
+                print("✅ Fallback model API call successful")
             
             if response and response.content:
                 result = response.content[0].text.strip()
@@ -194,13 +199,16 @@ jobs:
                     print("⚠️  API responded but with unexpected content")
             else:
                 print("❌ No response content received")
+                sys.exit(1)
                 
         except Exception as e:
             print(f"❌ API test failed: {e}")
             print(f"Error type: {type(e).__name__}")
+            import traceback
+            traceback.print_exc()
             sys.exit(1)
         EOF
-
+    
     - name: File Operations Test
       if: github.event.inputs.debug_level != 'basic'
       run: |
@@ -242,8 +250,8 @@ jobs:
         echo ""
         
         echo "Git config test:"
-        git config --local user.email "test@github.com"
-        git config --local user.name "Debug Test"
+        git config --local user.email "automation@github.com"
+        git config --local user.name "Claude Automation"
         echo "✅ Git config successful"
         
         echo "Branch operations test:"
@@ -251,7 +259,7 @@ jobs:
         echo "Current branch: $current_branch"
         
         # Test branch creation (but don't push)
-        test_branch="debug-test-$$"
+        test_branch="debug-test-$"
         if git checkout -b "$test_branch"; then
           echo "✅ Branch creation successful"
           git checkout "$current_branch"
@@ -271,11 +279,11 @@ jobs:
         echo ""
         echo "Check the logs above for:"
         echo "- ❌ Any failed checks"
-        echo "- ⚠️  Any warnings"
+        echo "- ⚠️  Any warnings"  
         echo "- ✅ Successful operations"
         echo ""
-        echo "If all checks passed, the issue might be in:"
-        echo "1. Workflow logic/syntax"
-        echo "2. GitHub Actions permissions" 
-        echo "3. Repository settings"
-        echo "4. Complex environment variable handling"
+        echo "If all checks passed, your environment is ready!"
+        echo "Next steps:"
+        echo "1. Run with 'full' debug level to test API calls"
+        echo "2. Check repository secrets are properly configured"
+        echo "3. Update the main Claude automation workflow"
