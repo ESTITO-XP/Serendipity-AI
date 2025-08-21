@@ -221,10 +221,10 @@ Please avoid submitting:
 
 Need help with your contribution? Reach out!
 
-- 💬 **GitHub Discussions**: Ask questions in our discussions section
-- 🐛 **GitHub Issues**: Create an issue for bugs or feature requests
-- 📧 **Email**: Contact me at [hehehola1177@hotmail.com](mailto:hehehola1177@hotmail.com)
-- 🎮 **Discord**: Chat on [Discord](https://discord.com/users/1191348720227332248)
+- 💬 [Discussions](https://github.com/ESTITO-XP/Serendipity-AI/discussions)
+- 🐛 [Issues](https://github.com/ESTITO-XP/Serendipity-AI/issues)
+- 📧 [Email](mailto:hehehola1177@hotmail.com)
+- 💬 [Discord](https://discord.com/users/1191348720227332248)
 
 ---
 
