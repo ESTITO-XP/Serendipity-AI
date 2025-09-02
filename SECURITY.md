@@ -1,9 +1,8 @@
-<h1 align="center">🛡️ Security Policy</h1>
+# 🛡️ Security Policy
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/511166e4-943a-4b4b-97f4-432f11ed77a2" width="400" alt="Serendipity AI" />
 </p>
-
 
 ## Supported Versions
 
