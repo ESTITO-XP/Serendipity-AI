@@ -1,5 +1,7 @@
 # 🤖 Serendipity AI
 
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/1f068665-3422-4899-89fd-fae272b3bf4d" />
+
 <div align="center">
 
 ![GitHub Stars](https://img.shields.io/github/stars/ESTITO-XP/Serendipity-AI?style=for-the-badge&logo=github&color=yellow)
