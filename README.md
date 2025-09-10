@@ -35,6 +35,22 @@ Serendipity AI isn't just another chatbot. It's your **supportive companion** de
 
 ---
 
+## 🧠 Features
+
+- **Pages**  
+  Modular writing surface with memory—ideal for creative drafts, study guides, and long-form thinking.
+
+- **Terminal Sheets**  
+  Code-first workspace for builders. Prototype, iterate, and organize your logic with clarity.
+
+- **Chat**  
+  Insightful, context-aware conversations that evolve with your ideas.
+
+- **Branding**  
+  Glassmorphism UI, partial text animation, and a design-forward aesthetic built for creators.
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
