@@ -3,6 +3,7 @@ import openai
 import os
 
 router = APIRouter()
+
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @router.post("/chat")
@@ -11,6 +12,7 @@ async def chat(request: Request):
     message = body.get("message", "")
     session_id = body.get("session_id", "default")
 
+    # Talk to OpenAI
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": message}],
@@ -24,4 +26,4 @@ async def chat(request: Request):
         "session_id": session_id,
         "version": os.getenv("APP_VERSION", "8.0")
     }
-  
+    
