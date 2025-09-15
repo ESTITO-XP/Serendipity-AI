@@ -1,28 +1,27 @@
 # Serendipity AI - Requirements
-# Core dependencies for the chat application
+# Version: 8.0 · Updated: 2025-09-15
 
-# Web Framework
-fastapi==0.110.0
-uvicorn[standard]==0.27.0
+# ⚙️ Web Framework
+fastapi==0.110.0              # Core API framework
+uvicorn[standard]==0.27.0     # ASGI server with extras
 
-# AI Integration
-openai==1.12.0
+# 🧠 AI Integration
+openai==1.12.0                # OpenAI API wrapper
 
-# Configuration & Environment
-python-dotenv==1.0.0
-pydantic==2.6.0
+# 🛠️ Configuration & Validation
+python-dotenv==1.0.0          # Load environment variables
+pydantic==2.6.0               # Data models & validation
 
-# HTTP & File Handling
-python-multipart==0.0.7
+# 📁 File Handling
+python-multipart==0.0.7       # Form & file uploads
 
-# Development Dependencies (optional)
+# 🧪 Dev Tools (optional)
 # Uncomment for development:
-# pytest==8.0.0
-# black==24.1.0
-# flake8==7.0.0
+# pytest==8.0.0                # Testing framework
+# black==24.1.0                # Code formatter
+# flake8==7.0.0                # Linter
 
-# Need Help?
-# Having trouble with dependencies? Get in touch:
+# 📬 Support & Community
 # Email: hehehola1177@hotmail.com
 # Discord: https://discord.com/users/1191348720227332248
 # Issues: https://github.com/ESTITO-XP/Serendipity-AI/issues
