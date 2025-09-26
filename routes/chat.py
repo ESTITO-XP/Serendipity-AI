@@ -1,29 +1,26 @@
+# routes/chat.py
+
 from fastapi import APIRouter, Request
-import openai
-import os
+from pydantic import BaseModel
+from utils.memory import get_context, update_context
+from utils.response import generate_reply
 
 router = APIRouter()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+class ChatInput(BaseModel):
+    user_id: str
+    message: str
 
 @router.post("/chat")
-async def chat(request: Request):
-    body = await request.json()
-    message = body.get("message", "")
-    session_id = body.get("session_id", "default")
+async def chat_endpoint(payload: ChatInput, request: Request):
+    # Retrieve context for user
+    context = get_context(payload.user_id)
 
-    # Talk to OpenAI
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": message}],
-        temperature=0.7
-    )
+    # Generate AI response
+    reply = generate_reply(payload.message, context)
 
-    reply = response.choices[0].message["content"]
+    # Update memory/context
+    update_context(payload.user_id, payload.message, reply)
 
-    return {
-        "response": reply,
-        "session_id": session_id,
-        "version": os.getenv("APP_VERSION", "8.0")
-    }
+    return {"reply": reply}
     
