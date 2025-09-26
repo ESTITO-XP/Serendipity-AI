@@ -37,25 +37,66 @@ Serendipity AI isn't just another chatbot. It's your **supportive companion** de
 
 ## 🧠 Features
 
-- **Pages**  
-  Modular writing surface with memory—ideal for creative drafts, study guides, and long-form thinking.
+- **Modular writing surface with memory**—ideal for **creative drafts, study guides, and long-form thinking**.
 
-- **Terminal Sheets**  
-  Code-first workspace for builders. Prototype, iterate, and organize your logic with clarity.
+- **Code-first workspace for builders.** Prototype, iterate, and organize your logic with clarity.
 
-- **Chat**  
-  Insightful, context-aware conversations that evolve with your ideas.
+- **Insightful, context-aware conversations** that evolve with your ideas.
 
-- **Branding**  
-  Glassmorphism UI, partial text animation, and a design-forward aesthetic built for creators.
+- **Glassmorphism UI, partial text animation, and a design-forward aesthetic** built for creators.
 
+- **Memory system** with persistent context
+
+- **Icon rendering troubleshooter** for mobile previews.
+
+- **Modular backup system** with manifest, icon, and version tags
+
+- **Artifact changelog engine** with timestamped clarity  
+
+- **README** as living document with changelogs and feature drops
+
+- **Solo founder signature system** (star icon, layout logic, branded identity)
+
+---
+
+## 🆕 What’s New
+
+- **🎙️ AI Voiceover (Experimental)**
+- Generate voiceovers for changelogs, feature drops, or README walkthroughs
+
+- Founder-grade tone with optional pacing, emphasis, and persona presets
+
+- Ideal for Threads, YouTube, or landing page embeds
+
+- **🎥 AI Video Support**
+- Modular video generation for UI demos, layout kits, and branded exports
+
+- Supports script-to-video flow for showcasing HEROIC HOTELS or README iterations
+
+- Future-ready for multiplayer world trailers and feature explainers
+
+- **🖼️ AI Image Generation**
+- Create branded visuals for changelogs, badges, and layout kits
+
+- Supports icon bag previews, font pairings, and export screens
+
+- Modular prompts for solo founder shields and Minecraft exports
+
+- **🔑 Open Sourcing (In Progress)**
+- README.md and layout kits prepped for public release
+
+- Modular systems like backup flows and changelog engines being packaged
+
+- GitHub repo evolving into a transparent, creator-powered workspace
+
+- See the discussion **[here](https://github.com/ESTITO-XP/Serendipity-AI/discussions/9)**
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.8+ (3.9+ recommended)
-- OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
+- OpenAI API key **[Get one here](https://platform.openai.com/api-keys)**
 
 ### 1️⃣ Clone & Setup
 ```bash
@@ -257,12 +298,12 @@ Customize the interface in `static/index.html`:
 We love contributions! Here's how to get involved:
 
 ### 🐛 Found a Bug?
-1. Check [existing issues](https://github.com/ESTITO-XP/Serendipity-AI/issues)
+1. Check **[existing issues](https://github.com/ESTITO-XP/Serendipity-AI/issues)**
 2. Create a new issue with details
 3. Include steps to reproduce
 
 ### 💡 Have an Idea?
-1. Open a [discussion](https://github.com/ESTITO-XP/Serendipity-AI/discussions)
+1. Open a **[discussion](https://github.com/ESTITO-XP/Serendipity-AI/discussions)**
 2. Describe your feature idea
 3. Let's collaborate on implementation
 
@@ -302,11 +343,11 @@ Serendipity AI was inspired by the belief that AI should be more than just a too
 ## 📞 Support & Community
 
 ### 💬 Get Help
-- [📧 Email](mailto:hehehola1177@hotmail.com)
-- [💭 Discord
-](https://discord.com/users/1191348720227332248)
-- [🐛 Issues](https://github.com/ESTITO-XP/Serendipity-AI/issues)
-- [💬 Discussions](https://github.com/ESTITO-XP/Serendipity-AI/discussions)
+- **[📧 Email](mailto:hehehola1177@hotmail.com)**
+- **[💭 Discord
+](https://discord.com/users/1191348720227332248)**
+- **[🐛 Issues](https://github.com/ESTITO-XP/Serendipity-AI/issues)**
+- **[💬 Discussions](https://github.com/ESTITO-XP/Serendipity-AI/discussions)**
 
 ### 🌟 Show Your Support
 If Serendipity AI brought some joy to your day:
@@ -319,11 +360,24 @@ If Serendipity AI brought some joy to your day:
 
 ## 📜 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE.txt) file for details.
+This project is licensed under the **MIT License** - see the **[LICENSE](LICENSE.txt)** file for details.
 
-*Built with ❤️ by [ESTITO_XP](https://github.com/ESTITO-XP)*
+Built with ❤️ by **[ESTITO_XP](https://github.com/ESTITO-XP)**
 
 ---
+
+## 🌐 Social Links
+
+Follow me across platforms:
+
+- **[Threads](https://www.threads.com/@estito_xp_2468)**
+- **[Bluesky](https://bsky.app/profile/estito-xp.bsky.social)**
+- **[X](https://x.com/ESTITO_XP_2468)**
+- **[Instagram](https://www.instagram.com/estito_xp_2468)**
+- **[GitHub](https://github.com/ESTITO-XP)**
+- **[Medium](https://medium.com/@ESTITO_XP_2468)**
+- **[YouTube](https://www.youtube.com/channel/UCGAXLsDKwYLIBp4GI_ruXuA)**
+- **[LinkedIn](https://www.linkedin.com/profile/view?id=ADoAAF8w10UBSjWXQGr2NrSMHxNAizoGuWiO7FA&trk=nav_responsive_tab_profile_pic)**
 
 <div align="center">
 
