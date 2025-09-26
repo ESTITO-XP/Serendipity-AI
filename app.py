@@ -1,39 +1,36 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-import openai
-import logging
+# app.py
 
-# Initialize router
-router = APIRouter()
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+# Import route modules
+from routes.chat import router as chat_router
+# from routes.voice import router as voice_router
+# from routes.image import router as image_router
+# from routes.video import router as video_router
 
-# Request model
-class ChatRequest(BaseModel):
-    message: str
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="Serendipity AI",
+        description="Creator-first workspace for memory, modularity, and momentum",
+        version="7.0"
+    )
 
-# Response model (optional for clarity)
-class ChatResponse(BaseModel):
-    response: str
+    # CORS setup
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Replace with specific domains if needed
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-@router.post("/chat", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest):
-    """
-    Handles incoming chat messages and returns AI-generated response.
-    """
-    logging.info(f"Received message: {request.message}")
+    # Register routes
+    app.include_router(chat_router, prefix="/api/chat")
+    # app.include_router(voice_router, prefix="/api/voice")
+    # app.include_router(image_router, prefix="/api/image")
+    # app.include_router(video_router, prefix="/api/video")
 
-    try:
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": request.message}]
-        )
-        reply = completion.choices[0].message["content"]
-        logging.info("Generated response successfully.")
-        return {"response": reply}
+    return app
 
-    except Exception as e:
-        logging.error(f"OpenAI error: {str(e)}")
-        raise HTTPException(status_code=500, detail="AI response failed.")
-        
+app = create_app()
