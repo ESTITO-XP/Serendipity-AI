@@ -1,26 +1,10 @@
-# routes/chat.py
+from fastapi import FastAPI
+from routes.chat import chat_router
 
-from fastapi import APIRouter, Request
-from pydantic import BaseModel
-from utils.memory import get_context, update_context
-from utils.response import generate_reply
+app = FastAPI(title="Serendipity AI")
 
-router = APIRouter()
+app.include_router(chat_router, prefix="/chat")
 
-class ChatInput(BaseModel):
-    user_id: str
-    message: str
-
-@router.post("/chat")
-async def chat_endpoint(payload: ChatInput, request: Request):
-    # Retrieve context for user
-    context = get_context(payload.user_id)
-
-    # Generate AI response
-    reply = generate_reply(payload.message, context)
-
-    # Update memory/context
-    update_context(payload.user_id, payload.message, reply)
-
-    return {"reply": reply}
-    
+@app.get("/")
+def root():
+    return {"message": "Welcome to Serendipity AI"}
