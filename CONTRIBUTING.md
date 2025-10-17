@@ -56,12 +56,7 @@
 
 ## 📞 Not Sure?
 
-Contact me here:-
-- **[📧 Email](mailto:hehehola1177@hotmail.com)**
-- **[💭 Discord
-](https://discord.com/users/1191348720227332248)**
-- **[🐛 Issues](https://github.com/ESTITO-XP/Serendipity-AI/issues)**
-- **[💬 Discussions](https://github.com/ESTITO-XP/Serendipity-AI/discussions)**
+**Make A [Discussion](https://github.com/ESTITO-XP/Serendipity-AI/discussions)**
 
 ---
 
