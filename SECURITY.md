@@ -1,8 +1,7 @@
 # 🛡️ Security Policy
 
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/511166e4-943a-4b4b-97f4-432f11ed77a2" width="400" alt="Serendipity AI" />
-</p>
+<img width="1920" height="1080" alt="Safety" src="https://github.com/user-attachments/assets/279856a0-b1f7-4aa7-9044-c44556fa4bb7" />
+
 
 ## Supported Versions
 
@@ -24,12 +23,7 @@
 
 ## Reporting Vulnerabilities
 
-- Please email: [hehehola1177@hotmail.com](mailto:hehehola1177@hotmail.com)
-- Subject: "SECURITY: [Brief Description]"
-- Include a description, steps to reproduce, impact, and suggested fix if possible.
-
-**Response Times:**
-- Acknowledge in 24h, assess in 72h, fix timeline within 7 days.
+Make A **[Discussion](https://github.com/ESTITO-XP/Serendipity-AI/discussions)**
 
 **Don't:**
 - Create public issues for vulnerabilities
@@ -71,7 +65,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*.yourdomain.com"])
 ## Security Community
 
 - No bug bounties, but public recognition and early access offered.
-- See: [OWASP Top 10](https://owasp.org/www-project-top-ten/), [FastAPI Security](https://fastapi.tiangolo.com/tutorial/security/), [OpenAI Usage](https://platform.openai.com/docs/usage-policies)
+- See: **[OWASP Top 10](https://owasp.org/www-project-top-ten/)**, *"[FastAPI Security](https://fastapi.tiangolo.com/tutorial/security/)**, **[OpenAI Usage](https://platform.openai.com/docs/usage-policies)**
 
 ## Contributor Checklist
 
@@ -94,7 +88,6 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*.yourdomain.com"])
 
 ## Contact
 
-- **[Email](mailto:hehehola1177@hotmail.com)**
 - **PGP Key: On request**
 - **Aim to reply within 24h**
 
