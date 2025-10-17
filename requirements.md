@@ -1,6 +1,6 @@
 # 📦 Requirements for Serendipity AI
 
-This document outlines the core dependencies required to run Serendipity AI. All packages are version-locked for stability and modular execution.
+<img width="1920" height="1080" alt="Copy of Serendipity AI Banner" src="https://github.com/user-attachments/assets/2d174e32-5e35-451d-9c91-c86f1a19f0df" />
 
 ---
 
