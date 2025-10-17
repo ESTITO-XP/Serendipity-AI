@@ -1,7 +1,6 @@
 # 🛠️ Installation — Serendipity AI
 
-A creator-first workspace built for memory, modularity, and momentum.  
-Designed by a solo founder for solo founders.
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/e09e4981-c20f-4844-8945-1d64ec9d79c9" />
 
 ---
 
