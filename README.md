@@ -1,6 +1,6 @@
 # 🤖 Serendipity AI
 
-<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/1f068665-3422-4899-89fd-fae272b3bf4d" />
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/f1b68902-9c81-4d91-bbbb-575ef827da95" />
 
 <div align="center">
 
@@ -318,7 +318,7 @@ We love contributions! Here's how to get involved:
 
 ## 📊 Roadmap
 
-### 🎯 Version 1.1 (Coming Soon)
+### 🎯 Version 1.1 (Coming in 2026)
 - [ ] Conversation export/import
 - [ ] Custom AI personalities
 - [ ] Improved mobile experience
@@ -342,17 +342,14 @@ Serendipity AI was inspired by the belief that AI should be more than just a too
 
 ## 📞 Support & Community
 
-### 💬 Get Help
-- **[📧 Email](mailto:hehehola1177@hotmail.com)**
-- **[💭 Discord
-](https://discord.com/users/1191348720227332248)**
-- **[🐛 Issues](https://github.com/ESTITO-XP/Serendipity-AI/issues)**
-- **[💬 Discussions](https://github.com/ESTITO-XP/Serendipity-AI/discussions)**
+### 💡 Any Ideas?
+
+💬 Make It A **[Discussion](https://github.com/ESTITO-XP/Serendipity-AI/discussions)**
 
 ### 🌟 Show Your Support
 If Serendipity AI brought some joy to your day:
-- **⭐ Star this repository**
-- **🍴 Fork and customize for your needs**
+- **⭐ [Star](https://github.com/ESTITO-XP/Serendipity-AI) this repository**
+- **🍴 [Fork](https://github.com/ESTITO-XP/Serendipity-AI/fork) and customize for your needs**
 - **📢 Share with friends who might enjoy it**
 - **🤝 Contribute to make it even better**
 
@@ -360,9 +357,9 @@ If Serendipity AI brought some joy to your day:
 
 ## 📜 License
 
-This project is licensed under the **MIT License** - see the **[LICENSE](LICENSE.txt)** file for details.
+This project is licensed under the **Apache 2.0 License** - see the **[LICENSE](LICENSE)** for details.
 
-Built with ❤️ by **[ESTITO_XP](https://github.com/ESTITO-XP)**
+Built with ❤️ by **[ESTITO XP](https://github.com/ESTITO-XP)**
 
 ---
 
@@ -380,8 +377,6 @@ Follow me across platforms:
 - **[LinkedIn](https://www.linkedin.com/profile/view?id=ADoAAF8w10UBSjWXQGr2NrSMHxNAizoGuWiO7FA&trk=nav_responsive_tab_profile_pic)**
 
 <div align="center">
-
-**[⭐ Star](https://github.com/ESTITO-XP/Serendipity-AI)  [🍴 Fork](https://github.com/ESTITO-XP/Serendipity-AI/fork)  [🐛 Issues](https://github.com/ESTITO-XP/Serendipity-AI/issues)  [💡 Discussions](https://github.com/ESTITO-XP/Serendipity-AI/discussions)**
 
 *Made with serendipity in mind* ✨
 
