@@ -1,6 +1,6 @@
-# 🤝 Contributing to Serendipity AI
+# 🤝🏻 Contributing to Serendipity AI
 
-Built by a **solo founder for the world**. Contributions welcome—clarity required.
+<img width="1920" height="1080" alt="Contribution" src="https://github.com/user-attachments/assets/66316da5-2bc4-4194-be08-4a3600c294ad" />
 
 ---
 
