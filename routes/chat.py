@@ -1,10 +1,14 @@
-from fastapi import FastAPI
-from routes.chat import chat_router
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
 
-app = FastAPI(title="Serendipity AI")
+chat_router = APIRouter()
 
-app.include_router(chat_router, prefix="/chat")
+class ChatInput(BaseModel):
+    message: str
 
-@app.get("/")
-def root():
-    return {"message": "Welcome to Serendipity AI"}
+@chat_router.post("/")
+async def chat(input: ChatInput):
+    user_message = input.message
+    # Placeholder response logic
+    return {"response": f"Echo: {user_message}"}
+    
